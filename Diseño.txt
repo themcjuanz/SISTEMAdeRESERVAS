@@ -1,0 +1,204 @@
+CLASES, ATRIBUTOS Y MÉTODOS
+---------------------------
+
+1. Usuario
+----------
+Atributos:
+- nombre: str
+- correo: str
+- documento: str  # identificador único
+- _hash: str      # contraseña hasheada
+- reservas: list[Reserva]
+- millas_acumuladas: int
+
+Métodos:
+- cambiar_contrasena(nueva_contrasena: str) -> None
+- verificar_contrasena(contrasena: str) -> bool
+- realizar_reserva(vuelo: Vuelo, cantidad: int, tipo_silla: Silla, datos_pasajeros: list[Pasajero]) -> Reserva
+- cancelar_reserva(reserva_id: str) -> bool
+- modificar_reserva(reserva_id: str, nuevos_datos: dict) -> bool
+- hacer_check_in(reserva_id: str, maletas: list[Maleta]) -> bool
+- canjear_millas(millas: int) -> bool
+
+2. Administrador (hereda de Usuario)
+-------------------------------------
+Métodos adicionales:
+- agregar_vuelo(vuelo: Vuelo) -> None
+- modificar_vuelo(vuelo_id: str, nuevos_datos: dict) -> bool
+- eliminar_vuelo(vuelo_id: str) -> bool
+- consultar_vuelos() -> list[Vuelo]
+- consultar_reservas() -> list[Reserva]
+
+3. Vuelo
+--------
+Atributos:
+- codigo: str
+- origen: str
+- destino: str
+- horario: datetime
+- sillas_economicas_disponibles: int
+- sillas_preferenciales_disponibles: int
+
+Métodos:
+- verificar_disponibilidad(cantidad: int, tipo_silla: Silla) -> bool
+- reservar_sillas(cantidad: int, tipo_silla: Silla) -> bool
+- liberar_sillas(cantidad: int, tipo_silla: Silla) -> None
+
+4. Reserva
+----------
+Atributos:
+- id: str
+- usuario: Usuario
+- vuelo: Vuelo
+- cantidad_sillas: int
+- tipo_silla: Silla
+- pasajeros: list[Pasajero]
+- precio_total: float
+- check_in_realizado: bool
+- maletas: list[Maleta]
+
+Métodos:
+- calcular_precio() -> float
+- realizar_check_in(maletas: list[Maleta]) -> None
+- calcular_millas() -> int
+
+5. Pasajero (hereda de Usuario)
+--------------------------------
+La clase `Pasajero` representa a **cada viajero** dentro de una reserva y hereda de `Usuario` para que, si lo deseas, pueda autenticarse y gestionar su información personal. Sus principales motivos de existencia son:
+
+1. **Separación de responsabilidad**: Un `Usuario` puede hacer varias reservas para distintos pasajeros, pero los datos de cada viajero (nombre, documento, silla asignada) se almacenan en instancias de `Pasajero`.
+2. **Flexibilidad del modelo**: Permite reservar para familiares o amigos sin que cada uno sea necesariamente un usuario registrado, o bien ofrecer la opción de que cada pasajero tenga su propia cuenta.
+3. **Extensibilidad**: Puedes añadir atributos específicos a `Pasajero` (como preferencias de comida, contacto de emergencia) sin sobrecargar la clase base `Usuario`.
+
+```python
+class Pasajero(Usuario):
+    def __init__(self, nombre, correo, documento, contrasena):
+        super().__init__(nombre=nombre, correo=correo, documento=documento)
+        self.set_contrasena(contrasena)
+        self.silla_asignada: Silla = None  # Referencia a la silla asignada en el vuelo
+```
+
+**Atributos heredados de `Usuario`:**
+- nombre, correo, documento, contraseña hasheada, reservas, millas_acumuladas
+
+**Métodos heredados de `Usuario`:**
+- iniciar_sesion, cambiar_contrasena, realizar_reserva, cancelar_reserva, modificar_reserva, hacer_check_in, canjear_millas
+
+**Atributos propios de `Pasajero`:**
+- `silla_asignada: Silla`  
+
+6. Silla (Clase base abstracta)
+ Silla (Clase base abstracta)
+-------------------------------
+Atributos:
+- codigo: str
+- disponible: bool
+
+Métodos (abstractos):
+- calcular_precio_base() -> float  # debe implementarse en subclases
+
+Subclases:
+- SillaEconomica
+- SillaPreferencial
+
+7. Maleta (Clase base abstracta)
+--------------------------------
+Atributos:
+- tipo: TipoMaleta  # enum: PEQUENA, MEDIANA, GRANDE
+- peso: float
+
+Métodos (abstractos):
+- calcular_costo() -> float
+
+Descripción:
+- `Maleta` define la interfaz para calcular el costo según tipo y peso. Cada subclase implementa su propia lógica.
+
+Subclases concretas (polimorfismo):
+
+```python
+class MaletaCabina(Maleta):
+    def calcular_costo(self) -> float:
+        # Sin costo adicional para equipaje de mano
+        return 0.0
+
+class MaletaBodega(Maleta):
+    def calcular_costo(self) -> float:
+        # Tarifa fija, sin importar el peso
+        return 40000.0
+
+class MaletaAdicional(Maleta):
+    def calcular_costo(self) -> float:
+        # Tarifa fija + costo por kilo extra
+        tarifa_fija = 40000.0
+        costo_por_kg = 5000.0
+        return tarifa_fija + (self.peso * costo_por_kg)
+```
+
+Cómo usar:
+```python
+# Crear maletas según el tipo
+m1 = MaletaCabina(tipo=TipoMaleta.CABINA, peso=5)
+print(m1.calcular_costo())  # 0.0
+
+m2 = MaletaBodega(tipo=TipoMaleta.BODEGA, peso=20)
+print(m2.calcular_costo())  # 40000.0
+
+m3 = MaletaAdicional(tipo=TipoMaleta.GRANDE, peso=10)
+print(m3.calcular_costo())  # 40000 + 10*5000 = 90000.0
+```
+
+8. SistemaReservas
+------------------ SistemaReservas
+------------------
+Responsabilidad: orquestar la lógica de negocio
+
+Atributos:
+- vuelos: list[Vuelo]
+- usuarios: list[Usuario]
+- reservas: list[Reserva]
+
+Métodos:
+- registrar_usuario(usuario: Usuario) -> None
+- iniciar_sesion(correo: str, contrasena: str) -> Usuario | None
+- buscar_vuelos(origen: str, destino: str) -> list[Vuelo]
+- agregar_vuelo(vuelo: Vuelo) -> None
+- modificar_vuelo(vuelo_id: str, nuevos_datos: dict) -> bool
+- eliminar_vuelo(vuelo_id: str) -> bool
+- guardar_datos(ruta: str) -> None
+- cargar_datos(ruta: str) -> None
+
+9. Persistencia (interfaz abstracta)
+------------------------------------
+Separación de la E/S de la lógica de negocio.
+
+```python
+from abc import ABC, abstractmethod
+
+class Persistencia(ABC):
+    @abstractmethod
+    def cargar_usuarios(self, ruta_archivo: str): pass
+
+    @abstractmethod
+    def guardar_usuarios(self, ruta_archivo: str): pass
+
+    @abstractmethod
+    def cargar_vuelos(self, ruta_archivo: str): pass
+
+    @abstractmethod
+    def guardar_vuelos(self, ruta_archivo: str): pass
+
+    @abstractmethod
+    def cargar_reservas(self, ruta_archivo: str): pass
+
+    @abstractmethod
+    def guardar_reservas(self, ruta_archivo: str): pass
+```
+
+HERENCIA Y POLIMORFISMO
+----------------------
+- `Administrador` hereda de `Usuario`.
+- `Pasajero` hereda de `Usuario`.
+- `SillaEconomica` y `SillaPreferencial` heredan de `Silla` y sobrescriben `calcular_precio_base()`.
+- `MaletaCabina`, `MaletaBodega`, `MaletaAdicional` heredan de `Maleta` y sobrescriben `calcular_costo()`.
+- Clases concretas de `Persistencia` (e.g., `PersistenciaTxt`, `PersistenciaJson`) implementan la interfaz `Persistencia`.
+- `ReservaConMillas` podría heredar de `Reserva` y redefinir `calcular_precio()` para aplicar descuentos.
