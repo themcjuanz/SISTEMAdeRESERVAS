@@ -5,5 +5,5 @@ class MaletaCabina(Maleta):
     def __init__(self, peso = 0.0):
         super().__init__(tipo=tipoMaleta.CABINA, peso=peso)
 
-    def calcularPrecio(self, tipo, peso):
-        return 0.0
+    def calcularPrecio(self, peso):
+        return 0

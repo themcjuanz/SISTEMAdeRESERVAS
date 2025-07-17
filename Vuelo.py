@@ -9,12 +9,12 @@ class Vuelo:
         self.sillasEconomicas= sillasEconomicas
         self.sillasPrefenciales = sillasPrefenciales
 
-        def getCodigo(self):
-            return self.codigo
+    def getCodigo(self):
+        return self.codigo
 
-        def verificarDisponibilidad(self, cantidad: int, tipoSilla: str):
-            pass
-        def reservarSillas(self, cantidad: int, tipoSilla: str):
-            pass
-        def liberarSillas(self, cantidad: int, tipoSilla: str):
-            pass
+    def verificarDisponibilidad(self, cantidad: int, tipoSilla: str):
+        pass
+    def reservarSillas(self, cantidad: int, tipoSilla: str):
+        pass
+    def liberarSillas(self, cantidad: int, tipoSilla: str):
+        pass

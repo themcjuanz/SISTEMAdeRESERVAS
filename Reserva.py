@@ -27,22 +27,16 @@ class Reserva:
         """
         if not self.checked_in:
             self.checked_in = True
-            # Normaliza maletas: cada Maleta aporta tipo y peso
             self.maletas = []
             for m in maletas:
-                m.tipo = m.tipo.upper()
                 self.maletas.append(m)
 
     def calcular_precio(self) -> float:
-        """
-        Calcula el precio total de la reserva:
-         - precio_base * no_sillas
-         - suma de precios de cada maleta (cada Maleta tiene su propio calcular_precio())
-        """
         total = self.precio_base * self.no_sillas
-        # Cálculo usando método de cada Maleta
         for maleta in self.maletas:
-            total += maleta.calcularPrecio()
+            precio_maleta = maleta.calcularPrecio(maleta.peso)
+            if precio_maleta is not None:
+                total += precio_maleta
         return total
 
     def calcular_millas(self) -> int:

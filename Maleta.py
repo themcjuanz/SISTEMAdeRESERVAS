@@ -9,4 +9,4 @@ class Maleta(ABC):
         self.peso = peso
     
     @abstractmethod
-    def calcularPrecio(self, tipo, peso): pass
+    def calcularPrecio(self, peso): pass
