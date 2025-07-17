@@ -4,50 +4,98 @@ from Maleta import Maleta
 from Vuelo import Vuelo
 
 class Reserva:
-    def __init__(self, id: str, usuario: Usuario, vuelo: Vuelo, no_sillas: int, precio_base: float):
+    """
+    Representa una reserva de vuelo, gestionando pasajeros, equipaje
+    y cálculo de precios y millas.
+    """
+
+    def __init__(
+        self,
+        id: str,
+        usuario: Usuario,
+        vuelo: Vuelo,
+        no_sillas: int,
+        precio_base: float
+    ):
+        # Validaciones básicas
+        if no_sillas <= 0:
+            raise ValueError("El número de sillas debe ser mayor que cero.")
+        if precio_base < 0:
+            raise ValueError("El precio base no puede ser negativo.")
+
         self.id = id
-        self.usuario = usuario       # Ahora es instancia de Usuario
-        self.vuelo = vuelo           # Puede ser dict o clase Vuelo según tu diseño
+        self.usuario = usuario
+        self.vuelo = vuelo
         self.no_sillas = no_sillas
-        self.pasajeros: List[Usuario] = []  # Lista de objetos Usuario como pasajeros adicionales
-        self.maletas: List[Maleta] = []     # Lista de objetos Maleta (MaletaMano, MaletaCabina, MaletaBodega)
         self.precio_base = precio_base
+        self.pasajeros: List[Usuario] = []
+        self.maletas: List[Maleta] = []
         self.checked_in = False
 
     def agregar_pasajero(self, pasajero: Usuario) -> None:
         """
-        Agrega un objeto Usuario como pasajero a la reserva.
+        Agrega un objeto Usuario como pasajero adicional a la reserva.
         """
         self.pasajeros.append(pasajero)
 
+    def _validar_maletas(self, maletas: List[Maleta]) -> None:
+        """
+        Valida que cada maleta cumpla criterios de peso y tipo.
+        Se puede extender según políticas de la aerolínea.
+        """
+        for m in maletas:
+            if m.peso <= 0:
+                raise ValueError(f"Maleta con peso inválido: {m.peso}")
+
     def check_in(self, maletas: List[Maleta]) -> None:
         """
-        Registra el check-in y almacena la lista de Maleta.
-        Convierte el tipo de cada Maleta a mayúsculas para consistencia.
+        Realiza el check-in, registrando equipaje y evitando dobles check-in.
+
+        :param maletas: lista de instancias de Maleta para facturar
+        :raises RuntimeError: si ya se había hecho check-in antes
         """
-        if not self.checked_in:
-            self.checked_in = True
-            self.maletas = []
-            for m in maletas:
-                self.maletas.append(m)
+        if self.checked_in:
+            raise RuntimeError("El check-in ya fue realizado previamente.")
+
+        self._validar_maletas(maletas)
+        self.maletas = list(maletas)
+        self.checked_in = True
 
     def calcular_precio(self) -> float:
+        """
+        Calcula el precio total de la reserva incluyendo el equipaje.
+        """
         total = self.precio_base * self.no_sillas
         for maleta in self.maletas:
             precio_maleta = maleta.calcularPrecio(maleta.peso)
-            if precio_maleta is not None:
-                total += precio_maleta
+            if precio_maleta is None:
+                raise RuntimeError(f"Error calculando precio de maleta: {maleta}")
+            total += precio_maleta
         return total
 
     def calcular_millas(self) -> int:
-        millas_reserva = 500 * self.no_sillas
-        # Actualiza millas del usuario
-        self.usuario.millas += millas_reserva
-        return millas_reserva
+        """
+        Devuelve las millas generadas por esta reserva, sin modificar el estado.
+        """
+        return 500 * self.no_sillas
+
+    def acreditar_millas(self) -> int:
+        """
+        Suma las millas de esta reserva al usuario y retorna las acreditadas.
+        """
+        millas = self.calcular_millas()
+        self.usuario.millas += millas
+        return millas
 
     def resumen(self) -> dict:
         """
-        Retorna un dict resumen de la reserva para mostrar o persistir.
+        Retorna un resumen puro de la reserva sin modificar estado:
+        - id de reserva
+        - id de usuario
+        - código de vuelo
+        - número de asientos
+        - precio total
+        - millas generadas (no acreditadas)
         """
         return {
             'id': self.id,
@@ -55,5 +103,5 @@ class Reserva:
             'vuelo_codigo': self.vuelo.getCodigo(),
             'no_sillas': self.no_sillas,
             'precio_total': self.calcular_precio(),
-            'millas_obtenidas': self.calcular_millas()
+            'millas_generadas': self.calcular_millas()
         }

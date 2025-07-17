@@ -1,9 +1,11 @@
+from Login import LoginDialog
 import random
 from PySide6 import QtWidgets, QtCore, QtGui
 
 class Widget(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        self.login_dialog = LoginDialog()
 
         # --- Messages and indices ---
         self.hello = [
@@ -62,6 +64,8 @@ class Widget(QtWidgets.QWidget):
 
         # --- Button signals ---
         self.button_hello.clicked.connect(self.highlight_current)
+        self.button_hello.clicked.connect(self.close_app)
+        self.button_hello.clicked.connect(self.login_dialog.exec)
         self.button_goodbye.clicked.connect(self.close_app)
 
     def paintEvent(self, event):
