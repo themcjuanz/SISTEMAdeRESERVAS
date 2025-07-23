@@ -1,85 +1,85 @@
 import json
-from typing import List
+from typing import List, Dict
 
-# Implementación concreta usando archivos .txt (JSON línea por línea)
 class PersistenciaTXT:
-
-    def cargar_usuarios(self, ruta_archivo: str) -> List[dict]:
+    def cargar_usuarios(self, ruta_archivo: str) -> List[Dict]:
         try:
             with open(ruta_archivo, "r", encoding="utf-8") as archivo:
                 return [json.loads(linea) for linea in archivo]
         except FileNotFoundError:
             return []
 
-    def guardar_usuarios(self, ruta_archivo: str, usuarios: List[dict]) -> None:
+    def guardar_usuarios(self, ruta_archivo: str, usuarios: List[Dict]) -> None:
         with open(ruta_archivo, "w", encoding="utf-8") as archivo:
-            for usuario in usuarios:
-                archivo.write(json.dumps(usuario) + "\n")
+            for u in usuarios:
+                archivo.write(json.dumps(u, ensure_ascii=False) + "\n")
 
-    def cargar_vuelos(self, ruta_archivo: str) -> List[dict]:
+    def cargar_vuelos(self, ruta_archivo: str) -> List[Dict]:
         try:
             with open(ruta_archivo, "r", encoding="utf-8") as archivo:
                 return [json.loads(linea) for linea in archivo]
         except FileNotFoundError:
             return []
 
-    def guardar_vuelos(self, ruta_archivo: str, vuelos: List[dict]) -> None:
-        with open(ruta_archivo, "w", encoding="utf-8") as archivo:
-            for vuelo in vuelos:
-                archivo.write(json.dumps(vuelo) + "\n")
+    def guardar_vuelos(self, ruta_archivo: str, vuelos: List[Dict], append: bool = False) -> None:
+        """
+        Exporta vuelos en formato pipe-separated (|) a partir de listas de dict:
+        codigo|origen|destino|dia|hora|sillas_preferencial|sillas_economica
+        """
+        modo = "a" if append else "w"
+        with open(ruta_archivo, modo, encoding="utf-8") as archivo:
+            for v in vuelos:
+                linea = (
+                    f"{v['codigo']}|{v['origen']}|{v['destino']}|"
+                    f"{v['dia']}|{v['hora']}|{v['sillas_preferencial']}|{v['sillas_economica']}"
+                )
+                archivo.write(linea + "\n")
 
-    def cargar_reservas(self, ruta_archivo: str) -> List[dict]:
+    def cargar_reservas(self, ruta_archivo: str) -> List[Dict]:
         try:
             with open(ruta_archivo, "r", encoding="utf-8") as archivo:
                 return [json.loads(linea) for linea in archivo]
         except FileNotFoundError:
             return []
 
-    def guardar_reservas(self, ruta_archivo: str, reservas: List[dict]) -> None:
+    def guardar_reservas(self, ruta_archivo: str, reservas: List[Dict]) -> None:
         with open(ruta_archivo, "w", encoding="utf-8") as archivo:
-            for reserva in reservas:
-                archivo.write(json.dumps(reserva) + "\n")
+            for r in reservas:
+                archivo.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    # Método para cargar datos tabulados (admite separadores de tabulación o espacios)
-    def cargar_vuelos_desde_archivo_tab(self, ruta_archivo: str) -> List[dict]:
-        print(f"Cargando vuelos desde archivo tabulado: {ruta_archivo}")
-        vuelos: List[dict] = []
+    def cargar_vuelos_desde_archivo_tab(self, ruta_archivo: str) -> List[Dict]:
+        """
+        Carga vuelos desde un archivo tabulado (separador: '\t').
+        Cada línea: codigo, origen, destino, dia, hora, sillas_preferencial, sillas_economica
+        """
+        vuelos: List[Dict] = []
         try:
             with open(ruta_archivo, 'r', encoding='utf-8') as archivo:
                 for idx, linea in enumerate(archivo, start=1):
-                    # Depuración: mostrar línea cruda
-                    raw = linea.rstrip("\n")
-                    print(f"Línea {idx}: '{raw}'")
-                    # Separar en cualquier espacio en blanco (tabs o espacios múltiples)
-                    partes = raw.split()
-                    print(f"Partes obtenidas: {partes}")
-                    if len(partes) == 7:
-                        vuelo = {
-                            'codigo': partes[0],
-                            'origen': partes[1],
-                            'destino': partes[2],
-                            'dia': partes[3],
-                            'hora': partes[4],
-                            'sillas_preferencial': int(partes[5]),
-                            'sillas_economica': int(partes[6])
-                        }
-                        vuelos.append(vuelo)
-                    else:
+                    partes = linea.rstrip('\n').split('\t')
+                    if len(partes) != 7:
                         print(f"Advertencia: línea {idx} no tiene 7 columnas, tiene {len(partes)}")
+                        continue
+                    vuelo = {
+                        'codigo': partes[0],
+                        'origen': partes[1],
+                        'destino': partes[2],
+                        'dia': partes[3],
+                        'hora': partes[4],
+                        'sillas_preferencial': int(partes[5]),
+                        'sillas_economica': int(partes[6])
+                    }
+                    vuelos.append(vuelo)
         except FileNotFoundError:
-            print(f"Error: archivo {ruta_archivo} no encontrado.")
-        print(f"Total vuelos cargados: {len(vuelos)}")
+            print(f"Error: archivo '{ruta_archivo}' no encontrado.")
         return vuelos
 
+# Ejemplo de uso sencillo:
 if __name__ == '__main__':
-    print("Entrando a main")
-    archivo_tabulado = 'vuelos_tabulados.txt'
-    archivo_json = 'vuelos.txt'
-
     persistencia = PersistenciaTXT()
-
-    # Cargar datos tabulados y guardarlos en formato JSON línea por línea
-    vuelos = persistencia.cargar_vuelos_desde_archivo_tab(archivo_tabulado)
-    persistencia.guardar_vuelos(archivo_json, vuelos)
-
-    print(f"Se han importado {len(vuelos)} vuelos y guardado en '{archivo_json}'")
+    # Carga desde tabulado:
+    vuelos_tab = persistencia.cargar_vuelos_desde_archivo_tab('vuelos_tabulados.txt')
+    print(f"Cargados {len(vuelos_tab)} vuelos desde tabulado.")
+    # Exporta con '|' al archivo:
+    persistencia.guardar_vuelos('vuelos_exportados.txt', vuelos_tab, append=False)
+    print("Vuelos exportados con '|' como separador.")
