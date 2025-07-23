@@ -1,9 +1,8 @@
 import json
 from typing import List
-from Persistencia import Persistencia
 
 # Implementación concreta usando archivos .txt (JSON línea por línea)
-class PersistenciaTXT(Persistencia):
+class PersistenciaTXT:
 
     def cargar_usuarios(self, ruta_archivo: str) -> List[dict]:
         try:
